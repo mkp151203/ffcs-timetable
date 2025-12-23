@@ -1,0 +1,402 @@
+<div class="timetable-wrapper">
+    <table class="timetable-grid">
+        <thead>
+            <!-- Header Row 1: Start times -->
+            <tr class="header-row">
+                <th class="corner-cell" colspan="2" rowspan="2">Theory</th>
+                <th class="time-header">08:30</th>
+                <th class="time-header">10:05</th>
+                <th class="time-header">11:40</th>
+                <th class="time-header lunch-header" rowspan="2">Lunch</th>
+                <th class="time-header">13:15</th>
+                <th class="time-header">14:50</th>
+                <th class="time-header">16:25</th>
+                <th class="time-header">18:00</th>
+            </tr>
+            <!-- Header Row 2: End times -->
+            <tr class="header-row">
+                <th class="time-header">10:00</th>
+                <th class="time-header">11:35</th>
+                <th class="time-header">13:10</th>
+                <th class="time-header">14:45</th>
+                <th class="time-header">16:20</th>
+                <th class="time-header">17:55</th>
+                <th class="time-header">19:30</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Monday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">MON</td>
+                {% set slot_info = occupied_slots.get('A11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A11</span><br><span
+                            class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A11</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B11</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B11</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('C11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="C11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">C11</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">C11</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('A21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A21</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('A14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B21</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('C21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="C21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">C21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">C21</div>{% endif %}
+                </td>
+            </tr>
+
+            <!-- Tuesday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">TUE</td>
+                {% set slot_info = occupied_slots.get('D11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D11</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D11</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E11</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E11</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F11') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F11" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F11</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F11</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('D21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D21</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E21</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F21') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F21" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F21</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F21</div>{% endif %}
+                </td>
+            </tr>
+
+            <!-- Wednesday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">WED</td>
+                {% set slot_info = occupied_slots.get('A12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A12</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B12</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('C12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="C12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">C12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">C12</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('A22') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A22" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A22</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A22</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B22') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B22" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B22</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B22</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('A24') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A24" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A24</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A24</div>{% endif %}
+                </td>
+            </tr>
+
+            <!-- Thursday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">THU</td>
+                {% set slot_info = occupied_slots.get('D12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D12</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E12</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F12') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F12" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F12</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F12</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('D22') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D22" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D22</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D22</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E22') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E22" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E22</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E22</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F22') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F22" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F22</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F22</div>{% endif %}
+                </td>
+            </tr>
+
+            <!-- Friday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">FRI</td>
+                {% set slot_info = occupied_slots.get('A13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A13</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B13</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('C13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="C13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">C13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">C13</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('A23') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="A23" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">A23</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">A23</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('C14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="C14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">C14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">C14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B23') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B23" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B23</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B23</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('B24') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="B24" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">B24</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">B24</div>{% endif %}
+                </td>
+            </tr>
+
+            <!-- Saturday -->
+            <tr class="day-row">
+                <td class="day-cell" colspan="2">SAT</td>
+                {% set slot_info = occupied_slots.get('D13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D13</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E13</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('F13') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="F13" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">F13</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">F13</div>{% endif %}
+                </td>
+                <td class="lunch-cell">Lunch</td>
+                {% set slot_info = occupied_slots.get('D23') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D23" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D23</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D23</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('D14') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D14" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D14</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D14</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('D24') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="D24" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">D24</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">D24</div>{% endif %}
+                </td>
+                {% set slot_info = occupied_slots.get('E23') %}
+                <td class="slot-cell {% if slot_info %}registered{% endif %}" data-slot="E23" {% if slot_info
+                    %}data-registration-id="{{ slot_info.registration_id }}"
+                    style="background-color: {{ slot_info.color }};" {% endif %} onclick="handleSlotClick(this)">
+                    {% if slot_info %}<div class="slot-content"><span class="slot-code">E23</span><br><span class="course-code">{{ slot_info.course_code
+                            }}</span><br><span class="slot-venue">{{ slot_info.venue }}</span></div>{% else %}<div
+                        class="slot-empty">E23</div>{% endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

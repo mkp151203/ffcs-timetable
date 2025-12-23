@@ -1,0 +1,132 @@
+"""Routes for HTML file upload and parsing."""
+
+from flask import Blueprint, request, jsonify
+from models import db, Course, Faculty, Slot
+from utils.html_parser import parse_vtop_html
+
+upload_bp = Blueprint('upload', __name__)
+
+
+@upload_bp.route('/parse', methods=['POST'])
+def parse_html_file():
+    """
+    Parse uploaded HTML file and extract course/slot information.
+    Returns parsed data without saving to database.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not file.filename.endswith('.html') and not file.filename.endswith('.htm'):
+        return jsonify({'error': 'File must be HTML'}), 400
+    
+    try:
+        html_content = file.read().decode('utf-8')
+        parsed = parse_vtop_html(html_content)
+        
+        if not parsed['course']:
+            return jsonify({'error': 'Could not parse course information from HTML'}), 400
+        
+        return jsonify({
+            'success': True,
+            'course': parsed['course'],
+            'slots': parsed['slots'],
+            'slot_count': len(parsed['slots'])
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Error parsing file: {str(e)}'}), 500
+
+
+@upload_bp.route('/import', methods=['POST'])
+def import_html_file():
+    """
+    Parse uploaded HTML file and save course/slot data to database.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    if not file.filename.endswith('.html') and not file.filename.endswith('.htm'):
+        return jsonify({'error': 'File must be HTML'}), 400
+    
+    try:
+        html_content = file.read().decode('utf-8')
+        parsed = parse_vtop_html(html_content)
+        
+        if not parsed['course']:
+            return jsonify({'error': 'Could not parse course information from HTML'}), 400
+        
+        course_data = parsed['course']
+        
+        # Check if course already exists
+        course = Course.query.filter_by(code=course_data['code']).first()
+        
+        if not course:
+            # Create new course
+            course = Course(
+                code=course_data['code'],
+                name=course_data['name'],
+                l=course_data['l'],
+                t=course_data['t'],
+                p=course_data['p'],
+                j=course_data['j'],
+                c=course_data['c'],
+                course_type=course_data['course_type'],
+                category=course_data['category']
+            )
+            db.session.add(course)
+            db.session.flush()
+        
+        # Add slots
+        slots_added = 0
+        for slot_data in parsed['slots']:
+            # Get or create faculty
+            faculty = None
+            if slot_data['faculty']:
+                faculty = Faculty.query.filter_by(name=slot_data['faculty']).first()
+                if not faculty:
+                    faculty = Faculty(name=slot_data['faculty'])
+                    db.session.add(faculty)
+                    db.session.flush()
+            
+            # Check if slot already exists for this course with same slot code and venue
+            existing_slot = Slot.query.filter_by(
+                course_id=course.id,
+                slot_code=slot_data['slot_code'],
+                venue=slot_data['venue']
+            ).first()
+            
+            if not existing_slot:
+                slot = Slot(
+                    slot_code=slot_data['slot_code'],
+                    course_id=course.id,
+                    faculty_id=faculty.id if faculty else None,
+                    venue=slot_data['venue'],
+                    available_seats=slot_data['available_seats'],
+                    total_seats=70,
+                    class_nbr=slot_data.get('class_nbr')
+                )
+                db.session.add(slot)
+                slots_added += 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Imported {course_data["code"]} with {slots_added} new slots',
+            'course': course_data,
+            'slots_added': slots_added
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Error importing file: {str(e)}'}), 500

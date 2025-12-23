@@ -1,0 +1,58 @@
+<!-- Faculty Selection Modal -->
+<div id="facultyModal" class="modal">
+    <div class="modal-content modal-xl">
+        <div class="modal-header">
+            <h2><i class="fas fa-user-tie"></i> Select Faculty & Slot</h2>
+            <button class="modal-close" onclick="closeFacultyModal()">&times;</button>
+        </div>
+
+        <!-- Course Info -->
+        <div class="course-info-panel" id="courseInfoPanel">
+            <table class="course-info-table">
+                <thead>
+                    <tr>
+                        <th>Course Detail</th>
+                        <th>L T P J C</th>
+                        <th>Course Type</th>
+                        <th>Category</th>
+                    </tr>
+                </thead>
+                <tbody id="courseInfoBody">
+                    <!-- Populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Slots Table -->
+        <div class="modal-body">
+            <form id="slotSelectionForm">
+                <table class="slots-table">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Slot</th>
+                            <th rowspan="2">Venue</th>
+                            <th rowspan="2">Faculty</th>
+                            <th rowspan="2">Clash Status</th>
+                            <th colspan="1">General</th>
+                        </tr>
+                        <tr>
+                            <th>Available</th>
+                        </tr>
+                    </thead>
+                    <tbody id="slotsTableBody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+            </form>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeFacultyModal()">
+                <i class="fas fa-times"></i> Cancel
+            </button>
+            <button type="button" class="btn btn-primary" id="registerBtn" onclick="registerSelectedSlot()">
+                <i class="fas fa-check"></i> Register
+            </button>
+        </div>
+    </div>
+</div>
