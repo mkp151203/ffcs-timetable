@@ -99,27 +99,46 @@ def import_html_file():
             db.session.add(course)
             db.session.flush()
         
-        # Add slots
-        slots_added = 0
+        # --- Batch Process Faculties ---
+        # 1. Collect all unique faculty names from the uploaded file
+        faculty_names = set(s['faculty'] for s in parsed['slots'] if s['faculty'])
+        
+        # 2. Fetch existing faculties for these names in one query
+        existing_faculties = Faculty.query.filter(Faculty.name.in_(faculty_names)).all()
+        # Map name -> faculty_obj
+        faculty_map = {f.name: f for f in existing_faculties}
+        
+        # 3. Identify and create missing faculties
+        missing_names = faculty_names - set(faculty_map.keys())
+        if missing_names:
+            new_facs = []
+            for name in missing_names:
+                f = Faculty(name=name)
+                new_facs.append(f)
+            
+            db.session.add_all(new_facs)
+            db.session.flush() # Flush once to get IDs and update session state
+            
+            # Update map with new ones
+            for f in new_facs:
+                faculty_map[f.name] = f
+
+        # --- Batch Process Slots ---
+        # 4. Fetch ALL existing slots for this course in one query
+        existing_slots = Slot.query.filter_by(course_id=course.id).all()
+        
+        # Create a set of (slot_code, venue) for quick lookup
+        existing_slot_signatures = {(s.slot_code, s.venue) for s in existing_slots}
+        
+        slots_to_add = []
         for slot_data in parsed['slots']:
-            # Get or create faculty
-            faculty = None
-            if slot_data['faculty']:
-                faculty = Faculty.query.filter_by(name=slot_data['faculty']).first()
-                if not faculty:
-                    faculty = Faculty(name=slot_data['faculty'])
-                    db.session.add(faculty)
-                    db.session.flush()
+            signature = (slot_data['slot_code'], slot_data['venue'])
             
-            # Check if slot already exists for this course with same slot code and venue
-            existing_slot = Slot.query.filter_by(
-                course_id=course.id,
-                slot_code=slot_data['slot_code'],
-                venue=slot_data['venue']
-            ).first()
-            
-            if not existing_slot:
-                slot = Slot(
+            if signature not in existing_slot_signatures:
+                # Resolve faculty
+                faculty = faculty_map.get(slot_data['faculty'])
+                
+                new_slot = Slot(
                     slot_code=slot_data['slot_code'],
                     course_id=course.id,
                     faculty_id=faculty.id if faculty else None,
@@ -128,8 +147,15 @@ def import_html_file():
                     total_seats=70,
                     class_nbr=slot_data.get('class_nbr')
                 )
-                db.session.add(slot)
-                slots_added += 1
+                slots_to_add.append(new_slot)
+                # Add to local signature set to prevent duplicates WITHIN the same file upload
+                existing_slot_signatures.add(signature)
+        
+        if slots_to_add:
+            db.session.add_all(slots_to_add)
+            slots_added = len(slots_to_add)
+        else:
+            slots_added = 0
         
         db.session.commit()
         
