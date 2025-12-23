@@ -39,71 +39,72 @@ class Slot(db.Model):
 
 
 # Slot timing reference - maps slot codes to day and period
+# Slot timing reference - matches timetable_grid.html
 SLOT_TIMINGS = {
-    # Period 1: 08:30 - 10:00
+    # MONDAY
     'A11': {'day': 'MON', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    'B11': {'day': 'TUE', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    'C11': {'day': 'WED', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    'D11': {'day': 'THU', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    'E11': {'day': 'FRI', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    'F11': {'day': 'SAT', 'period': 1, 'start': '08:30', 'end': '10:00'},
-    
-    # Period 2: 10:05 - 11:35
-    'A12': {'day': 'MON', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    'B12': {'day': 'TUE', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    'C12': {'day': 'WED', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    'D12': {'day': 'THU', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    'E12': {'day': 'FRI', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    'F12': {'day': 'SAT', 'period': 2, 'start': '10:05', 'end': '11:35'},
-    
-    # Period 3: 11:40 - 13:10
-    'A13': {'day': 'MON', 'period': 3, 'start': '11:40', 'end': '13:10'},
-    'B13': {'day': 'TUE', 'period': 3, 'start': '11:40', 'end': '13:10'},
-    'C13': {'day': 'WED', 'period': 3, 'start': '11:40', 'end': '13:10'},
-    'D13': {'day': 'THU', 'period': 3, 'start': '11:40', 'end': '13:10'},
-    'E13': {'day': 'FRI', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'B11': {'day': 'MON', 'period': 2, 'start': '10:05', 'end': '11:35'},
+    'C11': {'day': 'MON', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'A21': {'day': 'MON', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'A14': {'day': 'MON', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'B21': {'day': 'MON', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'C21': {'day': 'MON', 'period': 7, 'start': '18:00', 'end': '19:30'},
+
+    # TUESDAY
+    'D11': {'day': 'TUE', 'period': 1, 'start': '08:30', 'end': '10:00'},
+    'E11': {'day': 'TUE', 'period': 2, 'start': '10:05', 'end': '11:35'},
+    'F11': {'day': 'TUE', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'D21': {'day': 'TUE', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'E14': {'day': 'TUE', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'E21': {'day': 'TUE', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'F21': {'day': 'TUE', 'period': 7, 'start': '18:00', 'end': '19:30'},
+
+    # WEDNESDAY
+    'A12': {'day': 'WED', 'period': 1, 'start': '08:30', 'end': '10:00'},
+    'B12': {'day': 'WED', 'period': 2, 'start': '10:05', 'end': '11:35'},
+    'C12': {'day': 'WED', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'A22': {'day': 'WED', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'B14': {'day': 'WED', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'B22': {'day': 'WED', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'A24': {'day': 'WED', 'period': 7, 'start': '18:00', 'end': '19:30'},
+
+    # THURSDAY
+    'D12': {'day': 'THU', 'period': 1, 'start': '08:30', 'end': '10:00'},
+    'E12': {'day': 'THU', 'period': 2, 'start': '10:05', 'end': '11:35'},
+    'F12': {'day': 'THU', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'D22': {'day': 'THU', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'F14': {'day': 'THU', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'E22': {'day': 'THU', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'F22': {'day': 'THU', 'period': 7, 'start': '18:00', 'end': '19:30'},
+
+    # FRIDAY
+    'A13': {'day': 'FRI', 'period': 1, 'start': '08:30', 'end': '10:00'},
+    'B13': {'day': 'FRI', 'period': 2, 'start': '10:05', 'end': '11:35'},
+    'C13': {'day': 'FRI', 'period': 3, 'start': '11:40', 'end': '13:10'},
+    'A23': {'day': 'FRI', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'C14': {'day': 'FRI', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'B23': {'day': 'FRI', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'B24': {'day': 'FRI', 'period': 7, 'start': '18:00', 'end': '19:30'},
+
+    # SATURDAY
+    'D13': {'day': 'SAT', 'period': 1, 'start': '08:30', 'end': '10:00'},
+    'E13': {'day': 'SAT', 'period': 2, 'start': '10:05', 'end': '11:35'},
     'F13': {'day': 'SAT', 'period': 3, 'start': '11:40', 'end': '13:10'},
-    
-    # Period 4 (After Lunch): 13:15 - 14:45
-    'A14': {'day': 'MON', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    'B14': {'day': 'TUE', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    'C14': {'day': 'WED', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    'D14': {'day': 'THU', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    'E14': {'day': 'FRI', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    'F14': {'day': 'SAT', 'period': 4, 'start': '13:15', 'end': '14:45'},
-    
-    # Period 5: 14:50 - 16:20
-    'A21': {'day': 'MON', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    'B21': {'day': 'TUE', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    'C21': {'day': 'WED', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    'D21': {'day': 'THU', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    'E21': {'day': 'FRI', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    'F21': {'day': 'SAT', 'period': 5, 'start': '14:50', 'end': '16:20'},
-    
-    # Period 6: 16:25 - 17:55
-    'A22': {'day': 'MON', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    'B22': {'day': 'TUE', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    'C22': {'day': 'WED', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    'D22': {'day': 'THU', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    'E22': {'day': 'FRI', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    'F22': {'day': 'SAT', 'period': 6, 'start': '16:25', 'end': '17:55'},
-    
-    # Period 7: 18:00 - 19:30
-    'A23': {'day': 'MON', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    'B23': {'day': 'TUE', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    'C23': {'day': 'WED', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    'D23': {'day': 'THU', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    'E23': {'day': 'FRI', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    'F23': {'day': 'SAT', 'period': 7, 'start': '18:00', 'end': '19:30'},
-    
-    # Period 8: 19:30 onwards (if needed)
-    'A24': {'day': 'MON', 'period': 8, 'start': '19:30', 'end': '21:00'},
-    'B24': {'day': 'TUE', 'period': 8, 'start': '19:30', 'end': '21:00'},
-    'C24': {'day': 'WED', 'period': 8, 'start': '19:30', 'end': '21:00'},
-    'D24': {'day': 'THU', 'period': 8, 'start': '19:30', 'end': '21:00'},
-    'E24': {'day': 'FRI', 'period': 8, 'start': '19:30', 'end': '21:00'},
-    'F24': {'day': 'SAT', 'period': 8, 'start': '19:30', 'end': '21:00'},
+    'D23': {'day': 'SAT', 'period': 4, 'start': '13:15', 'end': '14:45'},
+    'D14': {'day': 'SAT', 'period': 5, 'start': '14:50', 'end': '16:20'},
+    'D24': {'day': 'SAT', 'period': 6, 'start': '16:25', 'end': '17:55'},
+    'E23': {'day': 'SAT', 'period': 7, 'start': '18:00', 'end': '19:30'},
 }
+
+# Slots that clash across Lunch (Period 3 and Period 4)
+LUNCH_CLASH_PAIRS = [
+    {'C11', 'A21'}, # Monday
+    {'F11', 'D21'}, # Tuesday
+    {'C12', 'A22'}, # Wednesday
+    {'F12', 'D22'}, # Thursday
+    {'C13', 'A23'}, # Friday
+    {'F13', 'D23'}, # Saturday
+]
 
 
 def get_slot_timing(slot_code):

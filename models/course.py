@@ -1,3 +1,4 @@
+from datetime import datetime
 from .database import db
 
 
@@ -7,7 +8,7 @@ class Course(db.Model):
     __tablename__ = 'courses'
     
     id = db.Column(db.Integer, primary_key=True)
-    code = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    code = db.Column(db.String(20), nullable=False, index=True)
     name = db.Column(db.String(200), nullable=False)
     l = db.Column(db.Integer, default=0)  # Lecture hours
     t = db.Column(db.Integer, default=0)  # Tutorial hours
@@ -17,8 +18,13 @@ class Course(db.Model):
     course_type = db.Column(db.String(20), nullable=False)  # LT, ETH, ELA, etc.
     category = db.Column(db.String(20), nullable=False)  # UENSE, PC, etc.
     
+    # Ownership
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    guest_id = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     # Relationship to slots
-    slots = db.relationship('Slot', backref='course', lazy='dynamic')
+    slots = db.relationship('Slot', backref='course', lazy='dynamic', cascade="all, delete-orphan")
     
     def __repr__(self):
         return f'<Course {self.code}: {self.name}>'

@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template
-from models import db, Registration
+from flask import Blueprint, render_template, session
+from models import db, Registration, User
 from models.slot import SLOT_TIMINGS
+import uuid
 
 main_bp = Blueprint('main', __name__)
 
@@ -24,8 +25,18 @@ COURSE_COLORS = [
 @main_bp.route('/')
 def index():
     """Main timetable page."""
-    # Get all registrations
-    registrations = Registration.query.all()
+    current_user = None
+    registrations = []
+    
+    # Check for logged-in user
+    if 'user_id' in session:
+        current_user = User.query.get(session['user_id'])
+        registrations = Registration.query.filter_by(user_id=session['user_id']).all()
+    else:
+        # Check/Create guest session
+        if 'guest_id' not in session:
+            session['guest_id'] = str(uuid.uuid4())
+        registrations = Registration.query.filter_by(guest_id=session['guest_id']).all()
     
     # Assign colors to each unique course
     course_colors = {}
@@ -85,5 +96,6 @@ def index():
         total_credits=total_credits,
         course_count=course_count,
         max_credits=27,
-        min_credits=16
+        min_credits=16,
+        current_user=current_user
     )

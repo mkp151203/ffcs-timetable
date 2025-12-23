@@ -181,32 +181,78 @@ function closeFacultyModal() {
     selectedSlotId = null;
 }
 
-async function registerSelectedSlot() {
-    if (!selectedSlotId) {
+async function registerSlot(slotId) {
+    // If called from button click (which passes event or nothing), we might need to get selectedSlotId
+    // But duplicate logic for 'selectSlot' global selection vs 'slotId' param needs unification.
+    // The previous API used 'registerSelectedSlot' processing global 'selectedSlotId'.
+    // The new API uses 'registerSlot(slotId)'.
+
+    // Let's unify: use the passed slotId if available, else use global selectedSlotId.
+    const finalSlotId = slotId || selectedSlotId;
+
+    if (!finalSlotId) {
         alert('Please select a slot first.');
         return;
     }
 
+    if (currentEditingRegistrationId) {
+        await updateRegistration(finalSlotId, currentEditingRegistrationId);
+    } else {
+        await createNewRegistration(finalSlotId);
+    }
+}
+
+async function createNewRegistration(slotId) {
     try {
         const response = await fetch('/api/registration/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slot_id: selectedSlotId })
+            body: JSON.stringify({ slot_id: slotId })
         });
 
         const data = await response.json();
 
         if (response.ok) {
             closeFacultyModal();
-            location.reload(); // Refresh to show updated timetable
+            // Reload to show updated timetable grid
+            location.reload();
         } else {
             alert(data.error || 'Registration failed.');
         }
 
     } catch (error) {
-        console.error('Registration error:', error);
-        alert('Error registering course.');
+        console.error('Registration error details:', error);
+        alert('Error registering course: ' + error.message);
     }
+}
+
+async function updateRegistration(slotId, regId) {
+    try {
+        const response = await fetch(`/api/registration/${regId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot_id: slotId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            closeFacultyModal();
+            // Reload to show updated timetable grid
+            location.reload();
+        } else {
+            alert(data.error || 'Update failed');
+        }
+
+    } catch (error) {
+        console.error('Update error details:', error);
+        alert('Error updating registration: ' + error.message);
+    }
+}
+
+// Alias for button click
+function registerSelectedSlot() {
+    registerSlot(selectedSlotId);
 }
 
 // ==================== Slot Click Handler ====================
@@ -361,6 +407,9 @@ async function loadRegisteredCoursesList() {
                             <td>${reg.slot?.faculty_name || 'TBA'}</td>
                             <td>${reg.slot?.course?.c || 0}</td>
                             <td>
+                                <button class="edit-btn" onclick="openEditRegistrationModal(${reg.slot?.course?.id}, ${reg.id})" title="Edit Slot/Faculty">
+                                    <i class="fas fa-edit"></i>
+                                </button>
                                 <button class="delete-btn" onclick="deleteRegistration(${reg.id})" title="Remove">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -377,6 +426,25 @@ async function loadRegisteredCoursesList() {
     } catch (error) {
         console.error('Error loading registrations:', error);
     }
+}
+
+// Global variable to track if we are editing a registration
+let currentEditingRegistrationId = null;
+
+function openEditRegistrationModal(courseId, registrationId) {
+    currentEditingRegistrationId = registrationId;
+
+    // Change modal title temporarily (optional UI tweak)
+    // For now re-use existing modal logic
+    selectCourse(courseId);
+}
+
+// Functions moved to line 184 and following
+// Removed duplicates to fix conflicts
+
+function closeCourseModal() {
+    document.getElementById('courseModal').classList.remove('active');
+    currentEditingRegistrationId = null; // Reset edit mode on close
 }
 
 function viewRegisteredCourses() {
@@ -488,6 +556,9 @@ function viewAllCourses() {
                                     <button class="btn btn-primary btn-sm" onclick="selectCourse(${course.id}); closeAllCoursesModal();">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
+                                    <button class="btn btn-danger btn-sm" onclick="deleteCourse(${course.id}, '${course.code}');" style="margin-left: 5px;">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -499,6 +570,33 @@ function viewAllCourses() {
             console.error('Error:', error);
             content.innerHTML = '<p class="empty-message">Error loading courses.</p>';
         });
+}
+
+async function deleteCourse(courseId, courseCode) {
+    if (!confirm(`Are you sure you want to delete course ${courseCode}? This will remove it from the list AND your timetable.`)) {
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/courses/${courseId}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+            alert(data.message);
+            // Refresh list and timetable
+            viewAllCourses();
+            loadRegisteredCoursesList();
+            loadRegisteredCoursesList();
+            location.reload();
+        } else {
+            alert(`Error: ${data.error}`);
+        }
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error deleting course.');
+    }
 }
 
 function closeAllCoursesModal() {
@@ -725,4 +823,54 @@ function showImportHelp() {
 
 function closeImportHelp() {
     document.getElementById('importHelpModal').classList.remove('active');
+}
+
+// ==================== PDF Download ====================
+
+async function downloadTimetablePDF() {
+    const { jsPDF } = window.jspdf;
+    const element = document.querySelector('.timetable-section');
+    const btn = document.querySelector('.print-btn');
+
+    // Temporarily hide the button for the screenshot
+    if (btn) btn.style.display = 'none';
+
+    try {
+        const canvas = await html2canvas(element, {
+            scale: 2, // High quality
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        const imgData = canvas.toDataURL('image/png');
+
+        // A4 Landscape dimensions in mm
+        const pdf = new jsPDF('l', 'mm', 'a4');
+        const pdfWidth = 297;
+        const pdfHeight = 210;
+
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgWidth = imgProps.width;
+        const imgHeight = imgProps.height;
+
+        // Calculate scale to fit width (with margin)
+        const margin = 10;
+        const maxWidth = pdfWidth - (margin * 2);
+        const ratio = maxWidth / imgWidth;
+
+        const finalWidth = imgWidth * ratio;
+        const finalHeight = imgHeight * ratio;
+
+        const x = (pdfWidth - finalWidth) / 2;
+        const y = 15; // Top padding
+
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save('My_Timetable.pdf');
+
+    } catch (err) {
+        console.error('PDF Generation Error:', err);
+        alert('Error generating PDF.');
+    } finally {
+        if (btn) btn.style.display = 'inline-flex';
+    }
 }

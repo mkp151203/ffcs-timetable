@@ -10,7 +10,33 @@
             <h1><i class="fas fa-calendar-alt"></i> FFCS Timetable Builder</h1>
         </div>
 
+        {% if not current_user %}
+        <div class="guest-alert">
+            <i class="fas fa-info-circle"></i>
+            <span>Guest Mode: Data is temporary</span>
+        </div>
+        {% endif %}
+
+        <div class="header-auth">
+            {% if current_user %}
+            <div class="user-profile">
+                {% if current_user.profile_pic %}
+                <img src="{{ current_user.profile_pic }}" alt="Avatar" class="user-avatar">
+                {% endif %}
+                <span class="user-name">{{ current_user.name }}</span>
+                <a href="{{ url_for('auth.logout') }}" class="btn-logout" title="Logout">
+                    <i class="fas fa-sign-out-alt"></i>
+                </a>
+            </div>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn-google-login">
+                <i class="fab fa-google"></i> Login with VIT Email
+            </a>
+            {% endif %}
+        </div>
     </div>
+
+
 </header>
 
 <!-- Main Content -->
@@ -87,6 +113,9 @@
     <section class="timetable-section">
         <div class="timetable-header">
             <h2>Your Timetable</h2>
+            <button class="btn btn-primary print-btn" onclick="downloadTimetablePDF()" title="Download as PDF">
+                <i class="fas fa-file-pdf"></i> Download PDF
+            </button>
             <div id="cellSelectionBar" class="cell-selection-bar" style="display: none;">
                 <span id="selectedCellsCount">0 slots selected</span>
                 <button type="button" class="btn btn-sm btn-secondary" onclick="clearCellSelection()">
@@ -130,7 +159,7 @@
 
 <!-- All Courses Modal -->
 <div id="allCoursesModal" class="modal">
-    <div class="modal-content modal-lg">
+    <div class="modal-content modal-xl">
         <div class="modal-header">
             <h2><i class="fas fa-list"></i> All Courses</h2>
             <button class="modal-close" onclick="closeAllCoursesModal()">&times;</button>

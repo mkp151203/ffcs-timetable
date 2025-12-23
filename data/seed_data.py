@@ -1,5 +1,9 @@
 """Seed data script to populate the database with sample VIT courses."""
 
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from models import db, Course, Faculty, Slot, Registration
 
 

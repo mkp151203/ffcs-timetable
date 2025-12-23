@@ -1,12 +1,10 @@
 """Routes for HTML file upload and parsing."""
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 from models import db, Course, Faculty, Slot
 from utils.html_parser import parse_vtop_html
 
 upload_bp = Blueprint('upload', __name__)
-
-
 @upload_bp.route('/parse', methods=['POST'])
 def parse_html_file():
     """
@@ -41,11 +39,11 @@ def parse_html_file():
     except Exception as e:
         return jsonify({'error': f'Error parsing file: {str(e)}'}), 500
 
-
 @upload_bp.route('/import', methods=['POST'])
 def import_html_file():
     """
     Parse uploaded HTML file and save course/slot data to database.
+    Scoped to current user or guest.
     """
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
@@ -57,6 +55,13 @@ def import_html_file():
     
     if not file.filename.endswith('.html') and not file.filename.endswith('.htm'):
         return jsonify({'error': 'File must be HTML'}), 400
+        
+    # Determine owner
+    user_id = session.get('user_id')
+    guest_id = session.get('guest_id')
+    
+    if not user_id and not guest_id:
+        return jsonify({'error': 'No active session'}), 401
     
     try:
         html_content = file.read().decode('utf-8')
@@ -67,8 +72,14 @@ def import_html_file():
         
         course_data = parsed['course']
         
-        # Check if course already exists
-        course = Course.query.filter_by(code=course_data['code']).first()
+        # Check if course already exists FOR THIS USER
+        query = Course.query.filter_by(code=course_data['code'])
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+        else:
+            query = query.filter_by(guest_id=guest_id)
+            
+        course = query.first()
         
         if not course:
             # Create new course
@@ -81,7 +92,9 @@ def import_html_file():
                 j=course_data['j'],
                 c=course_data['c'],
                 course_type=course_data['course_type'],
-                category=course_data['category']
+                category=course_data['category'],
+                user_id=user_id,
+                guest_id=guest_id
             )
             db.session.add(course)
             db.session.flush()

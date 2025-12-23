@@ -4,4 +4,6 @@ from .faculty import Faculty
 from .slot import Slot
 from .registration import Registration
 
-__all__ = ['db', 'Course', 'Faculty', 'Slot', 'Registration']
+from .user import User
+
+__all__ = ['db', 'Course', 'Faculty', 'Slot', 'Registration', 'User']

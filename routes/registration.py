@@ -1,14 +1,23 @@
-from flask import Blueprint, jsonify, request
-from models import db, Registration, Slot
-from models.slot import get_slot_timing
+from flask import Blueprint, jsonify, request, session
+from models import db, Registration, Slot, User
+from models.slot import get_slot_timing, LUNCH_CLASH_PAIRS
 
 registration_bp = Blueprint('registration', __name__)
 
+def get_current_registrations_query():
+    """Helper to get registrations query based on current session."""
+    if 'user_id' in session:
+        return Registration.query.filter_by(user_id=session['user_id'])
+    elif 'guest_id' in session:
+        return Registration.query.filter_by(guest_id=session['guest_id'])
+    return None
 
 @registration_bp.route('/', methods=['GET'])
 def get_registrations():
     """Get all registered courses."""
-    registrations = Registration.query.all()
+    query = get_current_registrations_query()
+    registrations = query.all() if query else []
+    
     return jsonify({
         'registrations': [reg.to_dict() for reg in registrations],
         'count': len(registrations),
@@ -18,7 +27,6 @@ def get_registrations():
         )
     })
 
-
 @registration_bp.route('/', methods=['POST'])
 def register_course():
     """Register a new course slot."""
@@ -27,20 +35,22 @@ def register_course():
     
     if not slot_id:
         return jsonify({'error': 'slot_id is required'}), 400
+        
+    query = get_current_registrations_query()
+    if query is None:
+        return jsonify({'error': 'No active session'}), 401
     
     # Check if slot exists
     slot = Slot.query.get(slot_id)
     if not slot:
         return jsonify({'error': 'Slot not found'}), 404
     
-    # Check if already registered for this course
-    existing = Registration.query.join(Slot).filter(
-        Slot.course_id == slot.course_id
-    ).first()
+    # Check if already registered for this course (scoped to user)
+    existing = query.join(Slot).filter(Slot.course_id == slot.course_id).first()
     if existing:
         return jsonify({'error': 'Already registered for this course'}), 400
     
-    # Check for clashes
+    # Check for clashes logic needs to be scoped too
     clash_result = check_slot_clashes(slot)
     if clash_result['has_clash']:
         return jsonify({
@@ -50,6 +60,11 @@ def register_course():
     
     # Create registration
     registration = Registration(slot_id=slot_id)
+    if 'user_id' in session:
+        registration.user_id = session['user_id']
+    else:
+        registration.guest_id = session['guest_id']
+        
     db.session.add(registration)
     db.session.commit()
     
@@ -58,22 +73,72 @@ def register_course():
         'registration': registration.to_dict()
     }), 201
 
-
 @registration_bp.route('/<int:reg_id>', methods=['DELETE'])
 def delete_registration(reg_id):
     """Delete a registration."""
-    registration = Registration.query.get_or_404(reg_id)
+    # Ensure user owns this registration
+    query = get_current_registrations_query()
+    if query is None:
+        return jsonify({'error': 'No active session'}), 401
+        
+    registration = query.filter_by(id=reg_id).first()
+    if not registration:
+        return jsonify({'error': 'Registration not found'}), 404
+        
     db.session.delete(registration)
     db.session.commit()
     
     return jsonify({'success': True})
 
+@registration_bp.route('/<int:reg_id>', methods=['PUT'])
+def update_registration(reg_id):
+    """Update registration to a different slot."""
+    data = request.get_json()
+    new_slot_id = data.get('slot_id')
+    
+    if not new_slot_id:
+        return jsonify({'error': 'slot_id is required'}), 400
+
+    query = get_current_registrations_query()
+    if query is None:
+        return jsonify({'error': 'No active session'}), 401
+        
+    registration = query.filter_by(id=reg_id).first()
+    if not registration:
+        return jsonify({'error': 'Registration not found'}), 404
+        
+    # Get new slot
+    new_slot = Slot.query.get(new_slot_id)
+    if not new_slot:
+        return jsonify({'error': 'Slot not found'}), 404
+        
+    # Ensure course matches (can only switch slots within same course)
+    if registration.slot.course_id != new_slot.course_id:
+        return jsonify({'error': 'Cannot change course, only slot'}), 400
+        
+    # Check clashes (excluding current registration)
+    clash_result = check_slot_clashes(new_slot, exclude_reg_id=reg_id)
+    if clash_result['has_clash']:
+        return jsonify({
+            'error': 'Slot clash detected',
+            'clashing_slots': clash_result['clashing_slots']
+        }), 400
+        
+    # Update slot
+    registration.slot_id = new_slot_id
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'registration': registration.to_dict()
+    })
 
 @registration_bp.route('/check-clash', methods=['POST'])
 def check_clash():
     """Check if a slot would clash with existing registrations."""
     data = request.get_json()
     slot_id = data.get('slot_id')
+    exclude_reg_id = data.get('exclude_reg_id') # Optional exclusion
     
     if not slot_id:
         return jsonify({'error': 'slot_id is required'}), 400
@@ -82,14 +147,16 @@ def check_clash():
     if not slot:
         return jsonify({'error': 'Slot not found'}), 404
     
-    result = check_slot_clashes(slot)
+    result = check_slot_clashes(slot, exclude_reg_id=exclude_reg_id)
     return jsonify(result)
 
 
 @registration_bp.route('/credits', methods=['GET'])
 def get_credits():
     """Get current credit summary."""
-    registrations = Registration.query.all()
+    query = get_current_registrations_query()
+    registrations = query.all() if query else []
+    
     total_credits = sum(
         reg.slot.course.c for reg in registrations 
         if reg.slot and reg.slot.course
@@ -103,40 +170,65 @@ def get_credits():
     })
 
 
-def check_slot_clashes(new_slot):
+from models.slot import get_slot_timing, LUNCH_CLASH_PAIRS
+
+# ... (omitted)
+
+def check_slot_clashes(new_slot, exclude_reg_id=None):
     """Check if a new slot clashes with existing registrations."""
     # Get all individual slots from the new slot
     new_individual_slots = new_slot.get_individual_slots()
     
-    # Get all registered slots
-    registrations = Registration.query.all()
+    # Get all registered slots for current user/guest
+    query = get_current_registrations_query()
+    registrations = query.all() if query else []
     
     clashing_slots = []
     
     for reg in registrations:
+        # Exclude specified registration (for updates)
+        if exclude_reg_id and reg.id == int(exclude_reg_id):
+            continue
+
         if reg.slot:
             registered_individual_slots = reg.slot.get_individual_slots()
             
             # Check for overlap
             for new_s in new_individual_slots:
-                new_timing = get_slot_timing(new_s)
-                if not new_timing:
-                    continue
-                    
+                
                 for reg_s in registered_individual_slots:
-                    reg_timing = get_slot_timing(reg_s)
-                    if not reg_timing:
-                        continue
                     
-                    # Clash if same day and same period
-                    if (new_timing['day'] == reg_timing['day'] and 
-                        new_timing['period'] == reg_timing['period']):
-                        clashing_slots.append({
-                            'slot_code': reg.slot.slot_code,
-                            'course_code': reg.slot.course.code if reg.slot.course else '',
-                            'course_name': reg.slot.course.name if reg.slot.course else ''
-                        })
-                        break
+                    # 1. Standard Clash: Same Timing
+                    new_timing = get_slot_timing(new_s)
+                    reg_timing = get_slot_timing(reg_s)
+                    
+                    if new_timing and reg_timing:
+                        if (new_timing['day'] == reg_timing['day'] and 
+                            new_timing['period'] == reg_timing['period']):
+                            clashing_slots.append({
+                                'slot_code': reg.slot.slot_code,
+                                'course_code': reg.slot.course.code if reg.slot.course else '',
+                                'course_name': reg.slot.course.name if reg.slot.course else '',
+                                'reason': 'Time overlap'
+                            })
+                            break
+                    
+                    # 2. Lunch Clash: Pre/Post Lunch Pairing
+                    # Check if the pair {new_s, reg_s} exists in LUNCH_CLASH_PAIRS
+                    current_pair = {new_s, reg_s}
+                    if current_pair in LUNCH_CLASH_PAIRS:
+                         clashing_slots.append({
+                                'slot_code': reg.slot.slot_code,
+                                'course_code': reg.slot.course.code if reg.slot.course else '',
+                                'course_name': reg.slot.course.name if reg.slot.course else '',
+                                'reason': 'Lunch clash (Consecutive theory slots around lunch)'
+                            })
+                         break
+                
+                if len(clashing_slots) > 0 and clashing_slots[-1] in clashing_slots[:-1]:
+                    # Avoid duplicates
+                     pass
+
     
     return {
         'has_clash': len(clashing_slots) > 0,

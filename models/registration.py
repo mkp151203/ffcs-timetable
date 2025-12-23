@@ -9,10 +9,12 @@ class Registration(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     slot_id = db.Column(db.Integer, db.ForeignKey('slots.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    guest_id = db.Column(db.String(100), nullable=True)
     registered_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationship to slot
-    slot = db.relationship('Slot', backref=db.backref('registrations', lazy='dynamic'))
+    slot = db.relationship('Slot', backref=db.backref('registrations', lazy='dynamic', cascade='all, delete-orphan'))
     
     def __repr__(self):
         return f'<Registration {self.id} - Slot {self.slot_id}>'

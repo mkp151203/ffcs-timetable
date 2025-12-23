@@ -1,21 +1,38 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, session
 from models import db, Course, Slot, Faculty, Registration
 
 courses_bp = Blueprint('courses', __name__)
 
+def get_scoped_courses():
+    """Get base query for courses visible to current user."""
+    user_id = session.get('user_id')
+    guest_id = session.get('guest_id')
+    
+    if user_id:
+        return Course.query.filter_by(user_id=user_id)
+    elif guest_id:
+        return Course.query.filter_by(guest_id=guest_id)
+    else:
+        # No session, return empty query (or should we return None?)
+        # For safety return a query that matches nothing usually, 
+        # but to be safe return Filter by False
+        return Course.query.filter(db.false())
 
 @courses_bp.route('/search')
 def search_courses():
     """Search courses by code or name."""
-    query = request.args.get('q', '').strip()
+    query_text = request.args.get('q', '').strip()
     
-    if not query:
+    if not query_text:
         return jsonify({'courses': []})
     
-    courses = Course.query.filter(
+    # Scope query
+    base_query = get_scoped_courses()
+    
+    courses = base_query.filter(
         db.or_(
-            Course.code.ilike(f'%{query}%'),
-            Course.name.ilike(f'%{query}%')
+            Course.code.ilike(f'%{query_text}%'),
+            Course.name.ilike(f'%{query_text}%')
         )
     ).limit(20).all()
     
@@ -27,14 +44,19 @@ def search_courses():
 @courses_bp.route('/<int:course_id>')
 def get_course(course_id):
     """Get course details by ID."""
-    course = Course.query.get_or_404(course_id)
+    base_query = get_scoped_courses()
+    course = base_query.filter_by(id=course_id).first_or_404()
     return jsonify(course.to_dict())
 
 
 @courses_bp.route('/<int:course_id>/slots')
 def get_course_slots(course_id):
     """Get all available slots for a course."""
-    course = Course.query.get_or_404(course_id)
+    base_query = get_scoped_courses()
+    course = base_query.filter_by(id=course_id).first_or_404()
+    
+    # Slots don't have user_id explicit, but if we found the course,
+    # the slots linked to it are authorized.
     slots = Slot.query.filter_by(course_id=course_id).all()
     
     return jsonify({
@@ -46,7 +68,8 @@ def get_course_slots(course_id):
 @courses_bp.route('/all')
 def get_all_courses():
     """Get all courses."""
-    courses = Course.query.order_by(Course.code).all()
+    base_query = get_scoped_courses()
+    courses = base_query.order_by(Course.code).all()
     return jsonify({
         'courses': [course.to_dict() for course in courses]
     })
@@ -62,10 +85,19 @@ def add_course_manually():
     for field in required:
         if not data.get(field):
             return jsonify({'error': f'{field} is required'}), 400
+            
+    # Determine owner
+    user_id = session.get('user_id')
+    guest_id = session.get('guest_id')
+    
+    if not user_id and not guest_id:
+        return jsonify({'error': 'No active session'}), 401
     
     try:
-        # Find or create course
-        course = Course.query.filter_by(code=data['course_code'].upper()).first()
+        # Find or create course (Scoped)
+        base_query = get_scoped_courses()
+        course = base_query.filter_by(code=data['course_code'].upper()).first()
+        
         if not course:
             course = Course(
                 code=data['course_code'].upper(),
@@ -76,12 +108,16 @@ def add_course_manually():
                 j=0,
                 c=int(data.get('credits', 0)),
                 course_type='N/A',
-                category='N/A'
+                category='N/A',
+                user_id=user_id,
+                guest_id=guest_id
             )
             db.session.add(course)
             db.session.flush()
         
-        # Find or create faculty
+        # Find or create faculty (Faculty is shared? Or should be scoped?
+        # Faculty names are generic. Let's keep faculty shared for now to avoid DUPLICATE faculty table boom, 
+        # or just create if missing. Faculty has no sensitive data.)
         faculty_name = data.get('faculty', 'N/A').strip() or 'N/A'
         faculty = Faculty.query.filter_by(name=faculty_name).first()
         if not faculty:
@@ -104,6 +140,11 @@ def add_course_manually():
         
         # Auto-register
         registration = Registration(slot_id=slot.id)
+        if user_id:
+            registration.user_id = user_id
+        else:
+            registration.guest_id = guest_id
+            
         db.session.add(registration)
         
         db.session.commit()
@@ -115,6 +156,21 @@ def add_course_manually():
             'slot': slot.to_dict()
         }), 201
         
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@courses_bp.route('/<int:course_id>', methods=['DELETE'])
+def delete_course(course_id):
+    """Delete a course and all associated slots/registrations."""
+    base_query = get_scoped_courses()
+    course = base_query.filter_by(id=course_id).first_or_404()
+    
+    try:
+        db.session.delete(course)
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Course {course.code} deleted successfully'})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
