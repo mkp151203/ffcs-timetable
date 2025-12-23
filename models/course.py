@@ -19,8 +19,8 @@ class Course(db.Model):
     category = db.Column(db.String(50), nullable=False)  # UENSE, PC, etc.
     
     # Ownership
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
-    guest_id = db.Column(db.String(100), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True, index=True)
+    guest_id = db.Column(db.String(100), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationship to slots

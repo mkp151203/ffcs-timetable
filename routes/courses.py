@@ -57,7 +57,11 @@ def get_course_slots(course_id):
     
     # Slots don't have user_id explicit, but if we found the course,
     # the slots linked to it are authorized.
-    slots = Slot.query.filter_by(course_id=course_id).all()
+    # Eager load Faculty and Course to prevent N+1 queries during serialization
+    slots = Slot.query.filter_by(course_id=course_id).options(
+        db.joinedload(Slot.faculty),
+        db.joinedload(Slot.course)
+    ).all()
     
     return jsonify({
         'course': course.to_dict(),

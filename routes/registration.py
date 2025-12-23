@@ -6,10 +6,18 @@ registration_bp = Blueprint('registration', __name__)
 
 def get_current_registrations_query():
     """Helper to get registrations query based on current session."""
+    query = None
     if 'user_id' in session:
-        return Registration.query.filter_by(user_id=session['user_id'])
+        query = Registration.query.filter_by(user_id=session['user_id'])
     elif 'guest_id' in session:
-        return Registration.query.filter_by(guest_id=session['guest_id'])
+        query = Registration.query.filter_by(guest_id=session['guest_id'])
+        
+    if query:
+        # Eager load Slot, Course, and Faculty to prevent N+1 queries
+        return query.options(
+            db.joinedload(Registration.slot).joinedload(Slot.course),
+            db.joinedload(Registration.slot).joinedload(Slot.faculty)
+        )
     return None
 
 @registration_bp.route('/', methods=['GET'])

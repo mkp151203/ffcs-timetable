@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session
-from models import db, Registration, User
+from models import db, Registration, User, Slot, Course, Faculty
 from models.slot import SLOT_TIMINGS
 import uuid
 
@@ -28,15 +28,21 @@ def index():
     current_user = None
     registrations = []
     
+    # Eager load options
+    eager_options = (
+        db.joinedload(Registration.slot).joinedload(Slot.course),
+        db.joinedload(Registration.slot).joinedload(Slot.faculty)
+    )
+
     # Check for logged-in user
     if 'user_id' in session:
         current_user = User.query.get(session['user_id'])
-        registrations = Registration.query.filter_by(user_id=session['user_id']).all()
+        registrations = Registration.query.filter_by(user_id=session['user_id']).options(*eager_options).all()
     else:
         # Check/Create guest session
         if 'guest_id' not in session:
             session['guest_id'] = str(uuid.uuid4())
-        registrations = Registration.query.filter_by(guest_id=session['guest_id']).all()
+        registrations = Registration.query.filter_by(guest_id=session['guest_id']).options(*eager_options).all()
     
     # Assign colors to each unique course
     course_colors = {}
