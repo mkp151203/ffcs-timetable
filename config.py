@@ -8,7 +8,12 @@ SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change-in-productio
 DEBUG = True
 
 # Database configuration
-SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'timetable.db')
+# Database configuration
+if os.environ.get('VERCEL'):
+    # Vercel filesystem is read-only, use ephemeral /tmp
+    SQLALCHEMY_DATABASE_URI = 'sqlite:////tmp/timetable.db'
+else:
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'timetable.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # Google OAuth Configuration

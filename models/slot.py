@@ -96,15 +96,7 @@ SLOT_TIMINGS = {
     'E23': {'day': 'SAT', 'period': 7, 'start': '18:00', 'end': '19:30'},
 }
 
-# Slots that clash across Lunch (Period 3 and Period 4)
-LUNCH_CLASH_PAIRS = [
-    {'C11', 'A21'}, # Monday
-    {'F11', 'D21'}, # Tuesday
-    {'C12', 'A22'}, # Wednesday
-    {'F12', 'D22'}, # Thursday
-    {'C13', 'A23'}, # Friday
-    {'F13', 'D23'}, # Saturday
-]
+
 
 
 def get_slot_timing(slot_code):

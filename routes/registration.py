@@ -170,7 +170,7 @@ def get_credits():
     })
 
 
-from models.slot import get_slot_timing, LUNCH_CLASH_PAIRS
+from models.slot import get_slot_timing
 
 # ... (omitted)
 
@@ -213,17 +213,7 @@ def check_slot_clashes(new_slot, exclude_reg_id=None):
                             })
                             break
                     
-                    # 2. Lunch Clash: Pre/Post Lunch Pairing
-                    # Check if the pair {new_s, reg_s} exists in LUNCH_CLASH_PAIRS
-                    current_pair = {new_s, reg_s}
-                    if current_pair in LUNCH_CLASH_PAIRS:
-                         clashing_slots.append({
-                                'slot_code': reg.slot.slot_code,
-                                'course_code': reg.slot.course.code if reg.slot.course else '',
-                                'course_name': reg.slot.course.name if reg.slot.course else '',
-                                'reason': 'Lunch clash (Consecutive theory slots around lunch)'
-                            })
-                         break
+
                 
                 if len(clashing_slots) > 0 and clashing_slots[-1] in clashing_slots[:-1]:
                     # Avoid duplicates
