@@ -178,3 +178,51 @@ def delete_course(course_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@courses_bp.route('/bulk', methods=['DELETE'])
+def bulk_delete_courses():
+    """Delete multiple courses."""
+    data = request.get_json()
+    course_ids = data.get('course_ids', [])
+    
+    if not course_ids:
+        return jsonify({'error': 'No course IDs provided'}), 400
+        
+    # Security: Ensure these courses belong to the current user
+    base_query = get_scoped_courses()
+    
+    try:
+        # 1. Verify ownership and get valid IDs
+        # We only want to delete courses that are actually owned by this user
+        valid_courses = base_query.filter(Course.id.in_(course_ids)).with_entities(Course.id).all()
+        valid_ids = [c.id for c in valid_courses]
+        
+        count = len(valid_ids)
+        if count == 0:
+            return jsonify({'message': 'No matching courses found to delete'}), 200
+
+        # 2. Bulk Delete Process (Manual Cascade for Performance)
+        # SQLAlchemy ORM cascading is slow for bulk operations (iterates objects).
+        # We manually delete children -> parents using bulk DELETE statements.
+        
+        # A. Find all Slots for these courses
+        slots = Slot.query.filter(Slot.course_id.in_(valid_ids)).with_entities(Slot.id).all()
+        slot_ids = [s.id for s in slots]
+        
+        if slot_ids:
+            # B. Delete Registrations linked to these Slots
+            Registration.query.filter(Registration.slot_id.in_(slot_ids)).delete(synchronize_session=False)
+            
+            # C. Delete Slots
+            Slot.query.filter(Slot.id.in_(slot_ids)).delete(synchronize_session=False)
+            
+        # D. Delete Courses
+        Course.query.filter(Course.id.in_(valid_ids)).delete(synchronize_session=False)
+            
+        db.session.commit()
+        return jsonify({'success': True, 'message': f'Successfully deleted {count} courses'})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

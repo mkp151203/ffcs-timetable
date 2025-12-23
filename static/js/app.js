@@ -547,10 +547,19 @@ function viewAllCourses() {
             }
 
             content.innerHTML = `
-                <p style="margin-bottom: 16px;">Total courses: <strong>${coursesData.courses.length}</strong></p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <p style="margin: 0;">Total courses: <strong>${coursesData.courses.length}</strong></p>
+                    <button id="bulkDeleteBtn" class="btn btn-danger btn-sm" disabled onclick="deleteSelectedCourses()">
+                        <i class="fas fa-trash"></i> Delete Selected
+                    </button>
+                </div>
+                <div style="max-height: 60vh; overflow-y: auto;">
                 <table class="registered-table">
-                    <thead>
+                    <thead style="position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;">
                         <tr>
+                            <th style="width: 40px; text-align: center;">
+                                <input type="checkbox" id="selectAllCourses" onclick="toggleAllCourses(this)">
+                            </th>
                             <th>Code</th>
                             <th>Name</th>
                             <th>L-T-P-J-C</th>
@@ -564,6 +573,9 @@ function viewAllCourses() {
                 const rowClass = isRegistered ? 'registered-row' : '';
                 return `
                             <tr class="${rowClass}">
+                                <td style="text-align: center;">
+                                    <input type="checkbox" class="course-checkbox" value="${course.id}" onclick="toggleCourseSelection('${course.id}')">
+                                </td>
                                 <td><strong>${course.code}</strong></td>
                                 <td>${course.name}</td>
                                 <td>${course.ltpjc}</td>
@@ -578,16 +590,18 @@ function viewAllCourses() {
                                                 <i class="fas fa-plus"></i> Add
                                             </button>`
                     }
-                                        <button class="btn btn-danger btn-sm" onclick="deleteCourse('${course.id}', '${course.code}');">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
                                     </div>
                                 </td>
                             </tr>
                         `}).join('')}
                     </tbody>
                 </table>
+                </div>
             `;
+
+            // Reset selection state
+            selectedCoursesToDelete.clear();
+            updateDeleteButtonState();
         })
         .catch(error => {
             console.error('Error:', error);
@@ -595,30 +609,92 @@ function viewAllCourses() {
         });
 }
 
-async function deleteCourse(courseId, courseCode) {
-    if (!confirm(`Are you sure you want to delete course ${courseCode}? This will remove it from the list AND your timetable.`)) {
+
+
+let selectedCoursesToDelete = new Set();
+
+function toggleAllCourses(source) {
+    const checkboxes = document.querySelectorAll('.course-checkbox');
+    checkboxes.forEach(cb => {
+        cb.checked = source.checked;
+        const id = cb.value;
+        if (source.checked) {
+            selectedCoursesToDelete.add(id);
+        } else {
+            selectedCoursesToDelete.delete(id);
+        }
+    });
+    updateDeleteButtonState();
+}
+
+function toggleCourseSelection(id) {
+    const checkbox = document.querySelector(`.course-checkbox[value="${id}"]`);
+    if (checkbox.checked) {
+        selectedCoursesToDelete.add(id);
+    } else {
+        selectedCoursesToDelete.delete(id);
+    }
+    updateDeleteButtonState();
+
+    // Update header checkbox
+    const allChecked = document.querySelectorAll('.course-checkbox:not(:checked)').length === 0;
+    const headerCheckbox = document.getElementById('selectAllCourses');
+    if (headerCheckbox) headerCheckbox.checked = allChecked;
+}
+
+function updateDeleteButtonState() {
+    const btn = document.getElementById('bulkDeleteBtn');
+    const count = selectedCoursesToDelete.size;
+
+    if (count > 0) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fas fa-trash"></i> Delete Selected (${count})`;
+    } else {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-trash"></i> Delete Selected`;
+    }
+}
+
+async function deleteSelectedCourses() {
+    const count = selectedCoursesToDelete.size;
+    if (count === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${count} selected courses? This cannot be undone.`)) {
         return;
     }
 
+    const btn = document.getElementById('bulkDeleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
     try {
-        const response = await fetch(`/api/courses/${courseId}`, {
-            method: 'DELETE'
+        const response = await fetch('/api/courses/bulk', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                course_ids: Array.from(selectedCoursesToDelete)
+            })
         });
+
         const data = await response.json();
 
         if (response.ok) {
+            // Success
             alert(data.message);
-            // Refresh list and timetable
-            viewAllCourses();
-            loadRegisteredCoursesList();
-            loadRegisteredCoursesList();
-            location.reload();
+            // viewAllCourses(); // Reload modal
+            // loadRegisteredCoursesList(); // Reload registered list (background)
+            location.reload(); // Simplest to sync everything
         } else {
-            alert(`Error: ${data.error}`);
+            alert('Error: ' + data.error);
+            btn.disabled = false;
+            updateDeleteButtonState();
         }
+
     } catch (error) {
-        console.error('Delete error:', error);
-        alert('Error deleting course.');
+        console.error('Bulk delete error:', error);
+        alert('Error deleting courses');
+        btn.disabled = false;
+        updateDeleteButtonState();
     }
 }
 
@@ -738,45 +814,57 @@ async function importHtmlFiles() {
     importBtn.disabled = true;
     statusDiv.innerHTML = '<div class="loading-spinner"></div> Importing data...';
 
-    const uploadPromises = selectedFiles.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        return fetch('/api/upload/import', {
-            method: 'POST',
-            body: formData
-        }).then(async (response) => {
-            const data = await response.json();
-            if (response.ok) {
-                return `<div class="import-success-item"><i class="fas fa-check"></i> ${data.message}</div>`;
-            } else {
-                return `<div class="import-error-item"><i class="fas fa-times"></i> ${file.name}: ${data.error}</div>`;
-            }
-        }).catch(error => {
-            return `<div class="import-error-item"><i class="fas fa-times"></i> ${file.name}: Error importing</div>`;
-        });
+    const formData = new FormData();
+    selectedFiles.forEach(file => {
+        formData.append('files[]', file);
     });
 
-    const results = await Promise.all(uploadPromises);
-    const successCount = results.filter(r => r.includes('import-success-item')).length;
+    try {
+        const response = await fetch('/api/upload/import', {
+            method: 'POST',
+            body: formData
+        });
 
-    statusDiv.innerHTML = `
-        <div class="import-results">
-            <div class="import-summary">${successCount}/${selectedFiles.length} courses imported</div>
-            ${results.join('')}
-        </div>
-    `;
+        const data = await response.json();
 
-    // Clear the file input
-    document.getElementById('htmlFileInput').value = '';
-    document.getElementById('selectedFileName').textContent = '';
-    selectedFiles = [];
+        if (response.ok && data.success) {
+            // Render results
+            const resultItems = data.results.map(res => {
+                if (res.status === 'success') {
+                    return `<div class="import-success-item"><i class="fas fa-check"></i> ${res.filename}: Imported ${res.course_code} (${res.slots_added} slots)</div>`;
+                } else {
+                    return `<div class="import-error-item"><i class="fas fa-times"></i> ${res.filename}: ${res.message}</div>`;
+                }
+            }).join('');
 
-    // Reload after a moment if any imports succeeded
-    if (successCount > 0) {
-        setTimeout(() => {
-            location.reload();
-        }, 2000);
-    } else {
+            statusDiv.innerHTML = `
+                <div class="import-results">
+                    <div class="import-summary">${data.summary}</div>
+                    ${resultItems}
+                </div>
+            `;
+
+            // Clear input
+            document.getElementById('htmlFileInput').value = '';
+            document.getElementById('selectedFileName').textContent = '';
+            selectedFiles = [];
+
+            if (data.success_count > 0) {
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                importBtn.disabled = false;
+            }
+
+        } else {
+            statusDiv.innerHTML = `<div class="import-error-item">Error: ${data.error || 'Upload failed'}</div>`;
+            importBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error('Import error:', error);
+        statusDiv.innerHTML = `<div class="import-error-item">Error importing files.</div>`;
         importBtn.disabled = false;
     }
 }

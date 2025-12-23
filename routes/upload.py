@@ -42,33 +42,74 @@ def parse_html_file():
 @upload_bp.route('/import', methods=['POST'])
 def import_html_file():
     """
-    Parse uploaded HTML file and save course/slot data to database.
-    Scoped to current user or guest.
+    Parse uploaded HTML files and save data to database.
+    Accepts multiple files key 'files[]'.
     """
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file provided'}), 400
+    files = request.files.getlist('files[]')
     
-    file = request.files['file']
+    if not files:
+        # Fallback for single file 'file' logic if needed, or just error
+        if 'file' in request.files:
+            files = [request.files['file']]
+        else:
+            return jsonify({'error': 'No files provided'}), 400
     
-    if file.filename == '':
-        return jsonify({'error': 'No file selected'}), 400
-    
-    if not file.filename.lower().endswith(('.html', '.htm', '.mhtml')):
-        return jsonify({'error': 'File must be HTML or MHTML'}), 400
-        
     # Determine owner
     user_id = session.get('user_id')
     guest_id = session.get('guest_id')
     
     if not user_id and not guest_id:
         return jsonify({'error': 'No active session'}), 401
+
+    results = []
+    success_count = 0
     
+    for file in files:
+        if file.filename == '':
+            continue
+            
+        if not file.filename.lower().endswith(('.html', '.htm', '.mhtml')):
+            results.append({
+                'filename': file.filename,
+                'status': 'error',
+                'message': 'Invalid file type'
+            })
+            continue
+
+        try:
+            # Process single file
+            result = _process_single_file_import(file, user_id, guest_id)
+            results.append(result)
+            if result['status'] == 'success':
+                success_count += 1
+                
+        except Exception as e:
+            # DB Rollback handled inside helper or here if transaction spans whole loop?
+            # We want partial success, so _process_single_file_import should handle its own transaction lifecycle 
+            # OR we handle it here. 
+            # If we want to isolate errors, we should commit/rollback per file.
+            db.session.rollback() 
+            results.append({
+                'filename': file.filename,
+                'status': 'error',
+                'message': str(e)
+            })
+
+    return jsonify({
+        'success': True,
+        'summary': f'Processed {len(files)} files. {success_count} succeeded.',
+        'results': results,
+        'success_count': success_count
+    })
+
+def _process_single_file_import(file, user_id, guest_id):
+    """Helper to process a single file import within the batch."""
     try:
         html_content = file.read().decode('utf-8')
         parsed = parse_vtop_html(html_content)
         
         if not parsed['course']:
-            return jsonify({'error': 'Could not parse course information from HTML'}), 400
+            return {'filename': file.filename, 'status': 'error', 'message': 'Could not parse course info'}
         
         course_data = parsed['course']
         
@@ -81,8 +122,8 @@ def import_html_file():
             
         course = query.first()
         
+        # Start Transaction for this file
         if not course:
-            # Create new course
             course = Course(
                 code=course_data['code'],
                 name=course_data['name'],
@@ -100,15 +141,12 @@ def import_html_file():
             db.session.flush()
         
         # --- Batch Process Faculties ---
-        # 1. Collect all unique faculty names from the uploaded file
         faculty_names = set(s['faculty'] for s in parsed['slots'] if s['faculty'])
         
-        # 2. Fetch existing faculties for these names in one query
+        # Note: In a batch loop, re-querying faculties every time is safe.
         existing_faculties = Faculty.query.filter(Faculty.name.in_(faculty_names)).all()
-        # Map name -> faculty_obj
         faculty_map = {f.name: f for f in existing_faculties}
         
-        # 3. Identify and create missing faculties
         missing_names = faculty_names - set(faculty_map.keys())
         if missing_names:
             new_facs = []
@@ -117,17 +155,13 @@ def import_html_file():
                 new_facs.append(f)
             
             db.session.add_all(new_facs)
-            db.session.flush() # Flush once to get IDs and update session state
+            db.session.flush()
             
-            # Update map with new ones
             for f in new_facs:
                 faculty_map[f.name] = f
 
         # --- Batch Process Slots ---
-        # 4. Fetch ALL existing slots for this course in one query
         existing_slots = Slot.query.filter_by(course_id=course.id).all()
-        
-        # Create a set of (slot_code, venue) for quick lookup
         existing_slot_signatures = {(s.slot_code, s.venue) for s in existing_slots}
         
         slots_to_add = []
@@ -135,9 +169,7 @@ def import_html_file():
             signature = (slot_data['slot_code'], slot_data['venue'])
             
             if signature not in existing_slot_signatures:
-                # Resolve faculty
                 faculty = faculty_map.get(slot_data['faculty'])
-                
                 new_slot = Slot(
                     slot_code=slot_data['slot_code'],
                     course_id=course.id,
@@ -148,7 +180,6 @@ def import_html_file():
                     class_nbr=slot_data.get('class_nbr')
                 )
                 slots_to_add.append(new_slot)
-                # Add to local signature set to prevent duplicates WITHIN the same file upload
                 existing_slot_signatures.add(signature)
         
         if slots_to_add:
@@ -157,15 +188,16 @@ def import_html_file():
         else:
             slots_added = 0
         
+        # Commit per file to avoid huge transactions and ensure partial batch success
         db.session.commit()
         
-        return jsonify({
-            'success': True,
-            'message': f'Imported {course_data["code"]} with {slots_added} new slots',
-            'course': course_data,
+        return {
+            'filename': file.filename,
+            'status': 'success',
+            'course_code': course_data['code'],
             'slots_added': slots_added
-        })
+        }
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': f'Error importing file: {str(e)}'}), 500
+        raise e # Re-raise to be caught by the loop handler
