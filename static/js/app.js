@@ -1073,33 +1073,45 @@ async function downloadTimetablePDF() {
         const canvas = await html2canvas(element, {
             scale: 2, // High quality
             useCORS: true,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            scrollY: -window.scrollY, // Correctly handle scroll position
+            windowWidth: document.documentElement.offsetWidth,
+            windowHeight: document.documentElement.offsetHeight
         });
 
-        const imgData = canvas.toDataURL('image/png');
+       const imgData = canvas.toDataURL('image/png');
 
-        // A4 Landscape dimensions in mm
-        const pdf = new jsPDF('l', 'mm', 'a4');
-        const pdfWidth = 297;
-        const pdfHeight = 210;
+// A4 Portrait
+const pdf = new jsPDF('p', 'mm', 'a4');
 
-        const imgProps = pdf.getImageProperties(imgData);
-        const imgWidth = imgProps.width;
-        const imgHeight = imgProps.height;
+const pageWidth = pdf.internal.pageSize.getWidth();
+const pageHeight = pdf.internal.pageSize.getHeight();
 
-        // Calculate scale to fit width (with margin)
-        const margin = 10;
-        const maxWidth = pdfWidth - (margin * 2);
-        const ratio = maxWidth / imgWidth;
+const margin = 10;
 
-        const finalWidth = imgWidth * ratio;
-        const finalHeight = imgHeight * ratio;
+// Available space
+const maxWidth = pageWidth - margin * 2;
+const maxHeight = pageHeight - margin * 2;
 
-        const x = (pdfWidth - finalWidth) / 2;
-        const y = 15; // Top padding
+// Image original size
+const imgWidth = canvas.width;
+const imgHeight = canvas.height;
 
-        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-        pdf.save('My_Timetable.pdf');
+// Scale to fit BOTH width & height
+const widthRatio = maxWidth / imgWidth;
+const heightRatio = maxHeight / imgHeight;
+const scale = Math.min(widthRatio, heightRatio);
+
+// Final size
+const finalWidth = imgWidth * scale;
+const finalHeight = imgHeight * scale;
+
+// Center image
+const x = (pageWidth - finalWidth) / 2;
+const y = (pageHeight - finalHeight) / 2;
+
+pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+pdf.save('My_Timetable.pdf');
 
     } catch (err) {
         console.error('PDF Generation Error:', err);
