@@ -1419,6 +1419,18 @@ async function generateTimetable() {
             statusDiv.innerHTML = '<i class="fas fa-info-circle"></i> No valid combinations found. Try removing some courses.';
         } else {
             let msg = `<i class="fas fa-check-circle"></i> Found ${generateSuggestions.length} timetable option(s).`;
+
+            if (data.warnings && data.warnings.length > 0) {
+                const warningsHtml = data.warnings.map(w => `<li>${w}</li>`).join('');
+                msg += `
+                    <div style="margin-top: 10px; padding: 10px; background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; border-radius: 4px; text-align: left; font-size: 0.9em;">
+                        <strong><i class="fas fa-exclamation-triangle"></i> Data Integrity Warnings:</strong>
+                        <ul style="margin: 5px 0 0 20px; padding: 0;">${warningsHtml}</ul>
+                        <small>These items were excluded from generation due to faulty data.</small>
+                    </div>
+                `;
+            }
+
             if (data.relaxed_constraints) {
                 msg += ' <span style="color: #e67e22; font-size: 0.9em;"><br><i class="fas fa-exclamation-triangle"></i> Strict time constraints relaxed to find matches.</span>';
             }
@@ -2540,7 +2552,7 @@ async function loadCourseForEdit(id, code, name, l, t, p, j, c, type, cat) {
 
         const impBtn = document.getElementById('ocrImportBtn');
         impBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
-        impBtn.onclick = null; // Clear old listener to be safe, but we use mode check inside function
+        // Logic inside importOcrData handles the mode check
         // Actually, better to rely on inside check or simple override
         // logic below handles it
 

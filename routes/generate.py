@@ -293,7 +293,9 @@ def suggest_timetable():
         'has_more': False,
         'generation_method': generation_method,
         'total_combinations': pool_size,
-        'relaxed_constraints': False  # Deprecated but kept for frontend compat
+        'total_combinations': pool_size,
+        'relaxed_constraints': False,  # Deprecated but kept for frontend compat
+        'warnings': generator.warnings
     })
 
 

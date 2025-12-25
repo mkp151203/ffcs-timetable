@@ -99,7 +99,10 @@ class TimetableGenerator:
         self._conflict_matrix: Dict[int, Set[int]] = {}  # slot_id -> set of conflicting slot_ids
         self._slot_scores_cache: Dict[int, float] = {}  # slot_id -> pre-computed score
         
-        # Build initial slot map
+        # Warnings collection
+        self.warnings: List[str] = []
+        
+        # Build initial slot map, filtering out faulty slots
         self._build_slot_map()
         
         # Pre-compute optimizations
@@ -180,9 +183,17 @@ class TimetableGenerator:
             randomize_only: If True, do not sort by preference score; only shuffle.
             ignore_preferences: If True, do not filter out slots based on user prefs (avoids, excludes).
         """
+        # Clear previous warnings if rebuilding map from scratch (not usually done, but safe)
+        if not randomize_only: 
+             self.warnings = []
+
         for course in self.courses:
             slots = []
             for slot in course.slots.all():
+                # CRITICAL: Filter out faulty slots with unknown timings
+                if self._is_slot_faulty(slot):
+                    continue
+
                 # Apply hard filters (Avoid X, Exclude Y) - ONLY if not ignoring preferences
                 if not ignore_preferences:
                     if self._should_exclude_slot(slot):
@@ -213,6 +224,30 @@ class TimetableGenerator:
             # Check Time Constraints
             # (Removed early/late specific checks)
         
+        return False
+
+    def _is_slot_faulty(self, slot: Slot) -> bool:
+        """
+        Check if a slot has valid timing codes.
+        If faulty, add a warning and return True.
+        """
+        # Check if we can resolve all timing codes
+        individual_slots = slot.get_individual_slots()
+        is_faulty = False
+        faulty_codes = []
+
+        for code in individual_slots:
+            timing = get_slot_timing(code)
+            if not timing:
+                is_faulty = True
+                faulty_codes.append(code)
+        
+        if is_faulty:
+            msg = f"Excluded {slot.faculty.name if slot.faculty else 'Unknown Faculty'} for {slot.course.code if slot.course else 'Unknown Course'}: Unknown slot code(s) {', '.join(faulty_codes)}"
+            if msg not in self.warnings:
+                self.warnings.append(msg)
+            return True
+            
         return False
     
     def filter_to_preferred_teachers(self) -> None:
