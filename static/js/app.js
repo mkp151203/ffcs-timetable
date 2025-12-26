@@ -1079,39 +1079,39 @@ async function downloadTimetablePDF() {
             windowHeight: document.documentElement.offsetHeight
         });
 
-       const imgData = canvas.toDataURL('image/png');
+        const imgData = canvas.toDataURL('image/png');
 
-// A4 Portrait
-const pdf = new jsPDF('p', 'mm', 'a4');
+        // A4 Portrait
+        const pdf = new jsPDF('p', 'mm', 'a4');
 
-const pageWidth = pdf.internal.pageSize.getWidth();
-const pageHeight = pdf.internal.pageSize.getHeight();
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
 
-const margin = 10;
+        const margin = 10;
 
-// Available space
-const maxWidth = pageWidth - margin * 2;
-const maxHeight = pageHeight - margin * 2;
+        // Available space
+        const maxWidth = pageWidth - margin * 2;
+        const maxHeight = pageHeight - margin * 2;
 
-// Image original size
-const imgWidth = canvas.width;
-const imgHeight = canvas.height;
+        // Image original size
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
 
-// Scale to fit BOTH width & height
-const widthRatio = maxWidth / imgWidth;
-const heightRatio = maxHeight / imgHeight;
-const scale = Math.min(widthRatio, heightRatio);
+        // Scale to fit BOTH width & height
+        const widthRatio = maxWidth / imgWidth;
+        const heightRatio = maxHeight / imgHeight;
+        const scale = Math.min(widthRatio, heightRatio);
 
-// Final size
-const finalWidth = imgWidth * scale;
-const finalHeight = imgHeight * scale;
+        // Final size
+        const finalWidth = imgWidth * scale;
+        const finalHeight = imgHeight * scale;
 
-// Center image
-const x = (pageWidth - finalWidth) / 2;
-const y = (pageHeight - finalHeight) / 2;
+        // Center image
+        const x = (pageWidth - finalWidth) / 2;
+        const y = (pageHeight - finalHeight) / 2;
 
-pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
-pdf.save('My_Timetable.pdf');
+        pdf.addImage(imgData, 'PNG', x, y, finalWidth, finalHeight);
+        pdf.save('My_Timetable.pdf');
 
     } catch (err) {
         console.error('PDF Generation Error:', err);
@@ -3096,3 +3096,115 @@ async function loadSavedTimetablesList() {
 }
 
 // Duplicate deleteSavedTimetable removed. The unified version is defined earlier.
+
+// --- CSV Import Features ---
+
+function openCsvUploadModal() {
+    const modal = document.getElementById('csvUploadModal');
+    if (modal) modal.classList.add('active');
+}
+
+function closeCsvUploadModal() {
+    const modal = document.getElementById('csvUploadModal');
+    if (modal) modal.classList.remove('active');
+
+    // Reset
+    const fileInput = document.getElementById('csvFileInput');
+    if (fileInput) fileInput.value = '';
+
+    const fileName = document.getElementById('csvFileName');
+    if (fileName) fileName.textContent = '';
+
+    const btn = document.getElementById('csvImportBtn');
+    if (btn) btn.disabled = true;
+
+    const status = document.getElementById('csvUploadStatus');
+    if (status) status.innerHTML = '';
+}
+
+// Bind CSV Input Change Listener
+document.addEventListener('DOMContentLoaded', function () {
+    const csvFileInput = document.getElementById('csvFileInput');
+    if (csvFileInput) {
+        csvFileInput.addEventListener('change', function () {
+            const fileNameSpan = document.getElementById('csvFileName');
+            const importBtn = document.getElementById('csvImportBtn');
+
+            if (this.files && this.files.length > 0) {
+                if (this.files.length === 1) {
+                    fileNameSpan.textContent = this.files[0].name;
+                } else {
+                    fileNameSpan.textContent = `${this.files.length} files selected`;
+                }
+                if (importBtn) importBtn.disabled = false;
+            } else {
+                if (fileNameSpan) fileNameSpan.textContent = '';
+                if (importBtn) importBtn.disabled = true;
+            }
+        });
+    }
+});
+
+async function importCsvFile() {
+    const fileInput = document.getElementById('csvFileInput');
+    const statusDiv = document.getElementById('csvUploadStatus');
+    const importBtn = document.getElementById('csvImportBtn');
+
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Please select at least one CSV file.');
+        return;
+    }
+
+    if (importBtn) importBtn.disabled = true;
+    if (statusDiv) statusDiv.innerHTML = '<div class="loading-spinner"></div> Importing files...';
+
+    const formData = new FormData();
+    for (let i = 0; i < fileInput.files.length; i++) {
+        formData.append('files[]', fileInput.files[i]);
+    }
+
+    try {
+        const response = await fetch('/api/upload/import', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            let successMsg = `<div class="import-success"><i class="fas fa-check-circle"></i> ${data.summary}</div>`;
+
+            if (data.results && data.results.length > 0) {
+                successMsg += '<ul class="import-results-list" style="max-height: 150px; overflow-y: auto; text-align: left; margin-top: 10px;">';
+                data.results.forEach(res => {
+                    if (res.status === 'success') {
+                        successMsg += `<li style="color: green; list-style: none; font-size: 0.9em;"><i class="fas fa-check"></i> <strong>${res.course_code || res.filename}</strong>: ${res.slots_added} slots added</li>`;
+                    } else {
+                        successMsg += `<li style="color: red; list-style: none; font-size: 0.9em;"><i class="fas fa-times"></i> <strong>${res.filename}</strong>: ${res.message}</li>`;
+                    }
+                });
+                successMsg += '</ul>';
+            }
+
+            if (statusDiv) statusDiv.innerHTML = successMsg;
+
+            if (data.success_count > 0) {
+                setTimeout(() => {
+                    closeCsvUploadModal();
+                    location.reload();
+                }, 2500);
+            } else {
+                if (importBtn) importBtn.disabled = false;
+            }
+
+        } else {
+            if (statusDiv) statusDiv.innerHTML = `<div class="import-error-item"><i class="fas fa-times"></i> ${data.error || 'Import failed'}</div>`;
+            if (importBtn) importBtn.disabled = false;
+        }
+
+    } catch (error) {
+        console.error('Import error:', error);
+        if (statusDiv) statusDiv.innerHTML = '<div class="import-error-item"><i class="fas fa-times"></i> Error uploading files.</div>';
+        if (importBtn) importBtn.disabled = false;
+    }
+}

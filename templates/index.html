@@ -93,6 +93,21 @@
             </ul>
         </div>
 
+        <!-- How to Use Video -->
+        <!-- How to Use Video -->
+        <div class="video-card">
+            <h3><i class="fas fa-video"></i> How to Use</h3>
+            <div id="videoCardFacade" class="video-facade"
+                style="cursor: pointer; position: relative; height: 160px; background: #000; border-radius: 4px; overflow: hidden;">
+                <img src="https://img.youtube.com/vi/Ymc5Ap_97ro/hqdefault.jpg" alt="How to Use"
+                    style="width: 100%; height: 100%; object-fit: cover; opacity: 0.8;">
+                <div class="play-button"
+                    style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 50px; height: 50px; background: rgba(255,0,0,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-play" style="color: white; font-size: 20px; margin-left: 4px;"></i>
+                </div>
+            </div>
+        </div>
+
         <!-- HTML Upload moved to top card -->
 
         <!-- Manual Entry moved to top card -->
@@ -392,10 +407,10 @@ A11+A12+A13,FACULTY NAME,AB02-330,0</pre>
             </div>
 
             <div class="upload-area">
-                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+                <input type="file" id="csvFileInput" accept=".csv" multiple style="display: none;">
                 <button type="button" class="btn btn-secondary"
                     onclick="document.getElementById('csvFileInput').click()">
-                    <i class="fas fa-file-upload"></i> Select CSV File
+                    <i class="fas fa-file-upload"></i> Select CSV File(s)
                 </button>
                 <span id="csvFileName" class="file-name"></span>
             </div>
@@ -618,6 +633,92 @@ A14+D11+D12,AB02-428,ABDUL,61"></textarea>
             </div>
         </div>
     </div>
+    <!-- Video Modal -->
+    <div id="videoModal" class="modal">
+        <div class="modal-content" style="max-width: 800px; width: 90%;">
+            <div class="modal-header">
+                <h2><i class="fas fa-video"></i> How to Use</h2>
+                <button class="modal-close" onclick="closeVideoModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                    <iframe id="videoFrame" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"
+                        src="" title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openVideoModal() {
+            console.log("Attempting to open video modal...");
+            const modal = document.getElementById('videoModal');
+            const iframe = document.getElementById('videoFrame');
+            if (modal && iframe) {
+                iframe.src = "https://www.youtube.com/embed/Ymc5Ap_97ro?autoplay=1&modestbranding=1&rel=0";
+                modal.classList.add('active');
+                modal.style.display = 'flex'; // Enforce flex display
+                console.log("Modal opened.");
+            } else {
+                console.error("Video modal elements not found!");
+            }
+        }
+
+        function closeVideoModal() {
+            const modal = document.getElementById('videoModal');
+            const iframe = document.getElementById('videoFrame');
+            if (iframe) iframe.src = ""; // Stop video
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const facade = document.getElementById('videoCardFacade');
+            if (facade) {
+                facade.addEventListener('click', openVideoModal);
+                console.log("Video card click listener attached.");
+            } else {
+                console.error("Video card facade element not found.");
+            }
+
+            // Move modal to body to ensure it appears on top
+            const modal = document.getElementById('videoModal');
+            if (modal && modal.parentNode !== document.body) {
+                document.body.appendChild(modal);
+                console.log("Moved video modal to body.");
+            }
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function (event) {
+            const modal = document.getElementById('videoModal');
+
+            // Should match either the modal itself (backdrop) or be contained in it if we want to support close on click outside
+            // But usually the backdrop IS the modal element div
+            if (event.target === modal) {
+                closeVideoModal();
+            }
+        });
+
+        function openVideoModal() {
+            console.log("Attempting to open video modal...");
+            const modal = document.getElementById('videoModal');
+            const iframe = document.getElementById('videoFrame');
+            if (modal && iframe) {
+                iframe.src = "https://www.youtube.com/embed/Ymc5Ap_97ro?autoplay=1&modestbranding=1&rel=0";
+                modal.classList.add('active');
+                modal.style.display = 'flex';
+                modal.style.zIndex = '99999'; // Force high z-index
+                console.log("Modal opened.");
+            } else {
+                console.error("Video modal elements not found!");
+            }
+        }
+    </script>
 </div>
 
 <script>
